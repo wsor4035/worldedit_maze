@@ -1,3 +1,14 @@
+**Changes in Version 2.0:**
+
+* patched crash
+* added luacheck
+* added github actions to run luacheck
+* made game agnostic
+* added worldedit command that takes three optional arguements
+* renamed mod
+
+yes, this is slightly overkill to fix a mod
+
 **Changes in Version 1.1:**
 
 * Nodes from third-party mods can now be used as maze materials (thanks MT_Dad)
