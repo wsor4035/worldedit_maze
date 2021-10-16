@@ -5,11 +5,11 @@
 --material used to fill free space (default: "air")
 local s_air="air"
 --material used to make walls inside the maze (default: "default:cobble")
-local s_wall="ethereal:bush"
+local s_wall="default:cobble"
 --material used to construct the pillar grid (default: "default:desert_cobble")
-local s_pillar="acacia_bush_leaves"
+local s_pillar="default:desert_cobble"
 --material used to surround the whole maze with (default: "default:desert_cobble")
-local s_outerwall="acacia_bush_leaves"
+local s_outerwall="default:acacia_bush_leaves"
 
 --divider value in space calculation. default: 6
 --rough determination where to set the passage into a line if setting it is not enforced by a crossed wall
