@@ -1,21 +1,7 @@
-
---config:
-
---materials: only change the node IDs "<here>".
---material used to fill free space (default: "air")
-local s_air="air"
---material used to make walls inside the maze (default: "default:cobble")
-local s_wall="default:cobble"
---material used to construct the pillar grid (default: "default:desert_cobble")
-local s_pillar="default:desert_cobble"
---material used to surround the whole maze with (default: "default:desert_cobble")
-local s_outerwall="default:acacia_bush_leaves"
-
 --divider value in space calculation. default: 6
 --rough determination where to set the passage into a line if setting it is not enforced by a crossed wall
 --leaving this at the default is probably the best
 local m_space_divider=6
---- end of config ---
 
 local dirmap={
 	{z=1, x=0},
@@ -28,11 +14,19 @@ local dirmap={
 local bmin, bmax, emin, emax, data, area, m_size_x, m_size_z, m_spaceprob
 local c_air, c_wall, c_pillar, c_outerwall
 
-local function set_nodes()
-	c_air=minetest.get_content_id(s_air)
-	c_wall=minetest.get_content_id(s_wall)
-	c_pillar=minetest.get_content_id(s_pillar)
-	c_outerwall=minetest.get_content_id(s_outerwall)
+local function set_nodes(nodes)
+	--nodes = {wall material, pillar grid material, material surrounding maze}
+	if not nodes then
+		if minetest.get_modpath("default") then
+			nodes = {"default:cobble", "default:desert_cobble", "default:desert_cobble"}
+		else
+			nodes = {"mapgen_stone", "mapgen_stone", "mapgen_stone"}
+		end
+	end
+	c_air=minetest.get_content_id("air")
+	c_wall=minetest.get_content_id(nodes[1])
+	c_pillar=minetest.get_content_id(nodes[2])
+	c_outerwall=minetest.get_content_id(nodes[3])
 end
 
 local rint=function(m,n) return math.floor(math.random(m,n)+0.5) end
@@ -66,7 +60,7 @@ end
 
 
 local function run_cmd(name,param)
-	set_nodes()
+	--set_nodes()
 	local t1=os.clock()
 
 	if tonumber(param) then
@@ -91,7 +85,7 @@ local function run_cmd(name,param)
 
 	minetest.chat_send_player(
 		name,
-		"Preparing generation of maze of size "..
+		"WorldEdit_Maze -!- Preparing generation of maze of size "..
 		m_size_x.."x"..m_size_z.." between "..
 		minetest.pos_to_string(bmin).." and "..minetest.pos_to_string(bmin)
 	)
@@ -145,7 +139,7 @@ local function run_cmd(name,param)
 		end
 	end
 
-	minetest.chat_send_player(name, "Starting to generate, "..#s_pos_list.." lines to fill.")
+	minetest.chat_send_player(name, "WorldEdit_Maze -!- Starting to generate, "..#s_pos_list.." lines to fill.")
 
 	while #s_pos_list>0 do
 		local entrynum=rint(1,#s_pos_list)
@@ -186,7 +180,7 @@ local function run_cmd(name,param)
 		end
 	end
 
-	minetest.chat_send_player(name, "Generation completed, writing to map...")
+	minetest.chat_send_player(name, "WorldEdit_Maze -!- Generation completed, writing to map...")
 
 	vmanip:set_data(data)
 	vmanip:write_to_map()
@@ -196,9 +190,42 @@ local function run_cmd(name,param)
 	return true, "Generating maze completed in "..((t2-t1)*1000).."ms"
 end
 
+--kept for legacy compat (may be removed in future versions)
 minetest.register_chatcommand("maze", {
 	params = "<seed>",
 	description = "Generate an Incredible Maze inside the WorldEdit area",
 	privs = {worldedit=true},
-	func=run_cmd,
+	func=function(name,param)
+		set_nodes()
+		run_cmd(name,param)
+	end,
+})
+
+worldedit.register_command("maze", {
+	params = "[wall material] [pillar grid material] [material surrounding maze]",
+	description = "create a maze in the current WorldEdit region",
+	privs = {worldedit=true},
+	require_pos=2,
+	parse = function(param)
+		local p_data
+		if param ~= "" then
+			p_data = param:split(" ")
+			if not p_data[2] then p_data[2] = p_data[1] end
+			if not p_data[3] then p_data[3] = p_data[2] end
+			for idx, nodename in pairs(p_data) do
+				local node = worldedit.normalize_nodename(nodename)
+				if not node then
+					return false, "WorldEdit_Maze -!- Invalid node name: " .. nodename
+				end
+				p_data[idx] = node
+			end
+		end
+		return true, p_data
+	end,
+	func = function(name, p_data)
+		minetest.chat_send_all(name)
+		set_nodes(p_data)
+		run_cmd(name,"")
+	end
+
 })
